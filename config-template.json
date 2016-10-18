@@ -1,0 +1,15 @@
+{
+  "gitlab": {
+    "url": "",
+    "token": ""
+  },
+  "firebase": {
+    "email": "",
+    "password": "",
+    "apiKey": "",
+    "authDomain": "",
+    "databaseURL": "",
+    "storageBucket": "",
+    "messagingSenderId": ""
+  }
+}
