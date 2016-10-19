@@ -34,6 +34,7 @@ class User {
   addEXP(skillName, amount) {
     if (this.getSkills()[skillName] === undefined) {
       this.getSkills()[skillName] = {
+        name: skillName,
         exp: amount,
         level: 0,
       };
