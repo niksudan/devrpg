@@ -1,3 +1,6 @@
+const expBase = 100;
+const expModifier = 1.5;
+
 class User {
   constructor(config) {
     this.name = config.name;
@@ -35,11 +38,13 @@ class User {
     if (this.getSkills()[skillName] === undefined) {
       this.getSkills()[skillName] = {
         name: skillName,
-        exp: amount,
-        level: 0,
+        level: 1,
+        totalExp: amount,
+        currentExp: 0,
+        neededExp: expBase,
       };
     } else {
-      this.getSkills()[skillName].exp += amount;
+      this.getSkills()[skillName].totalExp += amount;
     }
     this.calculateLevel(skillName);
   }
@@ -62,14 +67,16 @@ class User {
    * @param string skillName
    */
   calculateLevel(skillName) {
-    let exp = this.getSkills()[skillName].exp;
-    let amount = 100;
+    let exp = this.getSkills()[skillName].totalExp;
+    let amount = expBase;
     let level = 1;
     while (exp > 0) {
+      this.getSkills()[skillName].currentExp = exp;
+      this.getSkills()[skillName].neededExp = amount;
       exp -= amount;
       if (exp > 0) {
         level += 1;
-        amount *= 1.5;
+        amount *= expModifier;
       }
     }
     this.getSkills()[skillName].level = level;
