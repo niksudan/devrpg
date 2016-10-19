@@ -36,11 +36,12 @@ class GitLab {
         reject(`Commit #${commit.getID()} was possibly a merge`);
       } else {
         this.gitlab.projects.repository.diffCommit(commit.getProject().getID(), commit.getID(), (diffs) => {
-          if (diffs === null) {
+          if (diffs === null || diffs.length === 0) {
             reject(`No diff data received for commit #${commit.getID()}`);
 
-          // Cycle through diffs
-          } else if (diffs.length > 0) {
+          // Cycle through files
+          } else {
+            let checkedFiles = 0;
             diffs.forEach((diff) => {
               const file = new File({
                 name: diff.new_path,
@@ -49,7 +50,10 @@ class GitLab {
 
               // Don't add the file if it's ignored or has an untracked skill
               if (file.isIgnored() || !file.getSkill()) {
-                resolve(commit);
+                checkedFiles += 1;
+                if (checkedFiles === diffs.length) {
+                  resolve(commit);
+                }
               } else {
 
                 // Count the number of additions per diff
@@ -78,7 +82,10 @@ class GitLab {
                   commit.addFile(response);
                   commit.addAdditions(additions);
                   commit.calculateEXP();
-                  resolve(commit);
+                  checkedFiles += 1;
+                  if (checkedFiles === diffs.length) {
+                    resolve(commit);
+                  }
                 });
               }
             });
