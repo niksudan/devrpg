@@ -31,7 +31,7 @@
   },
   {
     "name": "Build Tools",
-    "includes": ["^gulpfile", "^gruntfile"],
+    "includes": ["^gulpfile", "^gruntfile", "^webpack\\.config"],
     "handicap": 2
   },
   {
