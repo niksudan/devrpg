@@ -26,12 +26,12 @@
   },
   {
     "name": "Package Managing",
-    "includes": ["^package\\.json$", "^bower\\.json$", ".bowerrc$", "^composer\\.json$", "^yarn\\.lock$"],
+    "includes": ["package\\.json$", "bower\\.json$", ".bowerrc$", "composer\\.json$"],
     "handicap": 3
   },
   {
     "name": "Build Tools",
-    "includes": ["^gulpfile", "^gruntfile", "^webpack\\.config"],
+    "includes": ["gulpfile", "gruntfile", "webpack\\.config"],
     "handicap": 2
   },
   {
