@@ -74,6 +74,13 @@ class File {
   }
 
   /**
+   * @param int additions
+   */
+  addAdditions(additions) {
+    this.additions += Math.max(0, additions);
+  }
+
+  /**
    * @return boolean
    */
   isIgnored() {

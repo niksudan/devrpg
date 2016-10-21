@@ -156,6 +156,34 @@ class DevRPG {
       }
     });
   }
+
+  /**
+   * Debug function used to fetch commit data
+   * @param string commitID
+   * @param int projectID
+   * @param string projectPath
+   */
+  testCommit(commitID, projectID, projectPath) {
+    try {
+      global.gitlab.fetchCommit(new Commit({
+        id: commitID,
+        project: new Project({
+          id: projectID,
+          path: projectPath,
+        }),
+      })).then((commit) => {
+        console.log(commit.getSkills());
+        process.exit(1);
+      }).catch((err) => {
+        console.log(err);
+        process.exit(0);
+      });
+    } catch (err) {
+      console.log(err.message);
+      process.exit(0);
+    }
+
+  }
 }
 
 module.exports = DevRPG;

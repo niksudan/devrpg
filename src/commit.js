@@ -6,7 +6,7 @@ class Commit {
     this.url = config.url;
     this.project = config.project;
     this.skills = config.skills === undefined ? [] : config.skills;
-    this.files = [];
+    this.files = config.files === undefined ? [] : config.files;
     this.additions = 0;
     this.bonusExp = 0;
   }
@@ -57,7 +57,8 @@ class Commit {
    * @param File file
    */
   addFile(file) {
-    this.files.push(file);
+    this.files[file.getName()] = file;
+    this.addAdditions(file.getAdditions());
   }
 
   /**
@@ -90,7 +91,8 @@ class Commit {
     // Calculate bonus EXP
     this.bonusExp = Math.min(Math.floor(this.getFiles().length / 5) * 5, 20);
 
-    this.getFiles().forEach((file) => {
+    for (const fileIndex of Object.keys(this.getFiles())) {
+      const file = this.getFiles()[fileIndex];
 
       // Push individual skills
       if (file.getSkill()) {
@@ -113,7 +115,7 @@ class Commit {
           skill.exp = Math.max(Math.min((Math.floor(skill.additions / 12) + 1) * 10, 50), 10) + this.bonusExp;
         }
       }
-    });
+    }
   }
 }
 

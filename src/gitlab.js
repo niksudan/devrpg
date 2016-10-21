@@ -1,27 +1,30 @@
-const gitlab = require('gitlab');
-const parseDiff = require('parse-diff');
+const got = require('got');
+const atob = require('atob');
+const jsdiff = require('diff');
+const Commit = require('./commit');
 const File = require('./file');
 
 class GitLab {
   constructor(config) {
-    this.gitlab = gitlab({
-      url: config.url,
-      token: config.token,
-    });
-    this.timeout = 5000;
+    this.url = config.url;
+    this.token = config.token;
   }
 
   /**
    * Make a query to GitLab
-   * @param function callback
+   * @param string path
    * @return Promise
    */
-  query(callback) {
+  query(path) {
     return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        reject('GitLab query timed out');
-      }, this.timeout);
-      callback(resolve, reject);
+      const url = `${this.url}/api/v3/${path}`;
+      got(url, { headers: { 'PRIVATE-TOKEN': this.token } })
+        .then((response) => {
+          resolve(JSON.parse(response.body));
+        })
+        .catch((err) => {
+          reject(err.response.body);
+        });
     });
   }
 
@@ -31,67 +34,177 @@ class GitLab {
    * @return Promise
    */
   fetchCommit(commit) {
-    return this.query((resolve, reject) => {
-      if (commit.getMessage().match(/^Merge/) !== null) {
-        reject(`Commit #${commit.getID()} was possibly a merge`);
-      } else {
-        this.gitlab.projects.repository.diffCommit(commit.getProject().getID(), commit.getID(), (diffs) => {
-          if (diffs === null || diffs.length === 0) {
-            reject(`No diff data received for commit #${commit.getID()}`);
+    return new Promise((resolve) => {
+      console.log(`#${commit.getID()}: loading...`);
 
-          // Cycle through files
-          } else {
-            let checkedFiles = 0;
-            diffs.forEach((diff) => {
-              const file = new File({
-                name: diff.new_path,
-                project: commit.getProject(),
-              });
+      // Load detailed commit data
+      this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`)
+        .then((commitData) => {
 
-              // Don't add the file if it's ignored or has an untracked skill
-              if (file.isIgnored() || !file.getSkill()) {
-                checkedFiles += 1;
-                if (checkedFiles === diffs.length) {
-                  resolve(commit);
-                }
-              } else {
+          // Check if data was returned
+          if (!commitData) {
+            console.log(`#${commit.getID()}: returned no data - skipping`);
+            resolve(commit);
+          }
 
-                // Count the number of additions per diff
-                let additions = 0;
-                parseDiff(diff.diff).forEach((parsedDiff) => {
-                  parsedDiff.chunks.forEach((chunk) => {
-                    chunk.changes.forEach((change) => {
-                      const value = change.content.substring(1).replace(/\s/, '');
-                      if (!(value.substring(1, 3) === '//' || value.substring(1) === '*' || value.substring(1, 3) === '/*')) {
-                        switch (change.type) {
-                          case 'add':
-                            additions += 1;
-                            break;
-                          case 'del':
-                            additions -= 1;
-                            break;
-                        }
-                      }
-                    });
-                  });
-                });
-                file.setAdditions(additions);
+          // Check if commit is a merge
+          if (commitData.parent_ids.length > 1) {
+            console.log(`#${commit.getID()}: merge - skipping`);
+            resolve(commit);
+          }
 
-                // Fetch file content
-                this.fetchFileContent(commit, file).then((response) => {
-                  commit.addFile(response);
-                  commit.addAdditions(additions);
+          // Fetch major files for commit
+          this.fetchFiles(commit)
+            .then((newFiles) => {
+              console.log(`#${commit.getID()}: loaded`);
+
+              // Check if project has any major files
+              if (newFiles.length === 0) {
+                console.log(`#${commit.getID()}: no major files - skipping`);
+                resolve(commit);
+
+              // Add total lines as additions if initial commit
+              } else if (commitData.parent_ids.length === 0) {
+                console.log(`#${commit.getID()}: initial commit - adding all lines as additions`);
+                let checkedFiles = 0;
+                newFiles.forEach((newFile) => {
+                  newFile.setAdditions(newFile.getLines());
+                  commit.addFile(newFile);
                   commit.calculateEXP();
                   checkedFiles += 1;
-                  if (checkedFiles === diffs.length) {
+                  if (checkedFiles === newFiles.length) {
+                    console.log(`#${commit.getID()}: finished`);
                     resolve(commit);
                   }
                 });
+
+              // Fetch major files for commit's parent
+              } else {
+                console.log(`#${commit.getID()}: parent #${commitData.parent_ids[0]} loading...`);
+                this.fetchFiles(new Commit({
+                  id: commitData.parent_ids[0],
+                  project: commit.getProject(),
+                }))
+                  .then((oldFiles) => {
+                    console.log(`#${commit.getID()}: parent #${commitData.parent_ids[0]} loaded`);
+
+                    // Check if parent has any major files
+                    if (oldFiles.length === 0) {
+                      console.log(`#${commit.getID()}: no major files`);
+                      let checkedFiles = 0;
+                      newFiles.forEach((newFile) => {
+                        newFile.setAdditions(newFile.getLines());
+                        commit.addFile(newFile);
+                        commit.calculateEXP();
+                        checkedFiles += 1;
+                        if (checkedFiles === newFiles.length) {
+                          console.log(`#${commit.getID()}: finished`);
+                          resolve(commit);
+                        }
+                      });
+
+                    // Diff commits
+                    } else {
+                      newFiles.forEach((newFile) => {
+
+                        // Find previous version of file
+                        let prevFile = false;
+                        oldFiles.forEach((oldFile) => {
+                          if (oldFile.getName() === newFile.getName()) {
+                            prevFile = oldFile;
+                          }
+                        });
+
+                        // Check if file actually exists
+                        if (prevFile === false) {
+                          newFile.setAdditions(newFile.getLines());
+                          commit.addFile(newFile);
+                          commit.calculateEXP();
+
+                        // Diff file content
+                        } else {
+                          try {
+                            const diff = jsdiff.structuredPatch('', '', atob(prevFile.getContent()), atob(newFile.getContent()), '', '');
+                            if (diff.hunks.length > 0) {
+                              diff.hunks.forEach((hunk) => {
+                                console.log(`#${commit.getID()}: ${newFile.getName()} was modified`);
+                                newFile.setAdditions(hunk.newLines - hunk.oldLines);
+                                commit.addFile(newFile);
+                                commit.calculateEXP();
+                              });
+                            }
+                          } catch (err) {
+                            console.log(err.message);
+                          }
+
+                        }
+                      });
+
+                      console.log(`#${commit.getID()}: finished`);
+                      resolve(commit);
+                    }
+                  });
               }
             });
-          }
         });
+    });
+  }
+
+  fetchFiles(commit, path) {
+    return new Promise((resolve) => {
+      if (!path) {
+        path = '';
       }
+      let files = [];
+      this.query(`projects/${commit.getProject().getID()}/repository/tree?ref_name=${commit.getID()}&path=${path}`)
+        .then((tree) => {
+          let checkedFiles = 0;
+          tree.forEach((treeData) => {
+            const file = new File({
+              name: `${path}${treeData.name}`,
+              project: commit.getProject(),
+            });
+            if (!file.isIgnored()) {
+              switch (treeData.type) {
+                case 'blob': {
+                  if (file.getSkill()) {
+                    this.fetchFileContent(commit, file)
+                      .then((fileWithContent) => {
+                        files.push(fileWithContent);
+                        checkedFiles += 1;
+                        if (checkedFiles === tree.length) {
+                          resolve(files);
+                        }
+                      });
+                  } else {
+                    checkedFiles += 1;
+                    if (checkedFiles === tree.length) {
+                      resolve(files);
+                    }
+                  }
+                  break;
+                }
+                case 'tree': {
+                  const newPath = `${path}${treeData.name}/`;
+                  this.fetchFiles(commit, newPath)
+                    .then((newFiles) => {
+                      files = files.concat(newFiles);
+                      checkedFiles += 1;
+                      if (checkedFiles === tree.length) {
+                        resolve(files);
+                      }
+                    });
+                  break;
+                }
+              }
+            } else {
+              checkedFiles += 1;
+              if (checkedFiles === tree.length) {
+                resolve(files);
+              }
+            }
+          });
+        });
     });
   }
 
@@ -102,16 +215,14 @@ class GitLab {
    * @return Promise
    */
   fetchFileContent(commit, file) {
-    return this.query((resolve) => {
-      this.gitlab.projects.repository.showFile(commit.getProject().getID(), {
-        file_path: file.getName(),
-        ref: commit.getID(),
-      }, (response) => {
-        if (response) {
-          file.setContent(response.content); // base64
-        }
-        resolve(file);
-      });
+    return new Promise((resolve) => {
+      this.query(`projects/${commit.getProject().getID()}/repository/files?file_path=${file.getName()}&ref=${commit.getID()}`)
+        .then((response) => {
+          if (response) {
+            file.setContent(response.content);
+          }
+          resolve(file);
+        });
     });
   }
 }
