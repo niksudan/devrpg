@@ -35,7 +35,6 @@ class GitLab {
    */
   fetchCommit(commit) {
     return new Promise((resolve) => {
-      console.log(`#${commit.getID()}: loading...`);
 
       // Load detailed commit data
       this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`)
@@ -43,107 +42,135 @@ class GitLab {
 
           // Check if data was returned
           if (!commitData) {
-            console.log(`#${commit.getID()}: returned no data - skipping`);
+            console.log(`#${commit.getID()}: returned no data`);
             resolve(commit);
           }
 
           // Check if commit is a merge
           if (commitData.parent_ids.length > 1) {
-            console.log(`#${commit.getID()}: merge - skipping`);
+            console.log(`#${commit.getID()}: commit was a merge`);
             resolve(commit);
           }
 
           // Fetch major files for commit
           this.fetchFiles(commit)
             .then((newFiles) => {
-              console.log(`#${commit.getID()}: loaded`);
 
-              // Check if project has any major files
+              // Check if project has any trackable files
               if (newFiles.length === 0) {
-                console.log(`#${commit.getID()}: no major files - skipping`);
+                console.log(`#${commit.getID()}: commit has no trackable files`);
                 resolve(commit);
 
               // Add total lines as additions if initial commit
               } else if (commitData.parent_ids.length === 0) {
-                console.log(`#${commit.getID()}: initial commit - adding all lines as additions`);
+                console.log(`#${commit.getID()}: commit was an initial commit`);
                 let checkedFiles = 0;
                 newFiles.forEach((newFile) => {
-                  newFile.setAdditions(newFile.getLines());
-                  commit.addFile(newFile);
-                  commit.calculateEXP();
-                  checkedFiles += 1;
-                  if (checkedFiles === newFiles.length) {
-                    console.log(`#${commit.getID()}: finished`);
-                    resolve(commit);
-                  }
+                  this.fetchFileContent(commit, newFile).then((newFile) => {
+                    newFile.setAdditions(newFile.getLines());
+                    commit.addFile(newFile);
+                    commit.calculateEXP();
+                    checkedFiles += 1;
+                    console.log(`#${commit.getID()}: calculated file skills (${checkedFiles}/${newFiles.length})`);
+                    if (checkedFiles === newFiles.length) {
+                      console.log(`#${commit.getID()}: finished`);
+                      resolve(commit);
+                    }
+                  });
                 });
 
               // Fetch major files for commit's parent
               } else {
-                console.log(`#${commit.getID()}: parent #${commitData.parent_ids[0]} loading...`);
-                this.fetchFiles(new Commit({
+                console.log(`#${commit.getID()}: loaded commit data (1/2)`);
+                const prevCommit = new Commit({
                   id: commitData.parent_ids[0],
                   project: commit.getProject(),
-                }))
-                  .then((oldFiles) => {
-                    console.log(`#${commit.getID()}: parent #${commitData.parent_ids[0]} loaded`);
+                });
+                this.fetchFiles(prevCommit).then((oldFiles) => {
+                  console.log(`#${commit.getID()}: loaded commit data (2/2)`);
 
-                    // Check if parent has any major files
-                    if (oldFiles.length === 0) {
-                      console.log(`#${commit.getID()}: no major files`);
-                      let checkedFiles = 0;
-                      newFiles.forEach((newFile) => {
+                  // Check if parent has any major files
+                  if (oldFiles.length === 0) {
+                    console.log(`#${commit.getID()}: parent has no trackable files`);
+                    let checkedFiles = 0;
+                    newFiles.forEach((newFile) => {
+                      this.fetchFileContent(commit, newFile).then((newFile) => {
                         newFile.setAdditions(newFile.getLines());
                         commit.addFile(newFile);
                         commit.calculateEXP();
                         checkedFiles += 1;
+                        console.log(`#${commit.getID()}: calculated file skills (${checkedFiles}/${newFiles.length})`);
                         if (checkedFiles === newFiles.length) {
                           console.log(`#${commit.getID()}: finished`);
                           resolve(commit);
                         }
                       });
+                    });
 
-                    // Diff commits
-                    } else {
-                      newFiles.forEach((newFile) => {
+                  // Diff commits
+                  } else {
+                    console.log(`#${commit.getID()}: diffed files (0/${newFiles.length})`);
+                    let checkedFiles = 0;
+                    newFiles.forEach((newFile) => {
 
-                        // Find previous version of file
-                        let prevFile = false;
-                        oldFiles.forEach((oldFile) => {
-                          if (oldFile.getName() === newFile.getName()) {
-                            prevFile = oldFile;
-                          }
-                        });
-
-                        // Check if file actually exists
-                        if (prevFile === false) {
-                          newFile.setAdditions(newFile.getLines());
-                          commit.addFile(newFile);
-                          commit.calculateEXP();
-
-                        // Diff file content
-                        } else {
-                          try {
-                            const diff = jsdiff.structuredPatch('', '', atob(prevFile.getContent()), atob(newFile.getContent()), '', '');
-                            if (diff.hunks.length > 0) {
-                              diff.hunks.forEach((hunk) => {
-                                console.log(`#${commit.getID()}: ${newFile.getName()} was modified`);
-                                newFile.setAdditions(hunk.newLines - hunk.oldLines);
-                                commit.addFile(newFile);
-                                commit.calculateEXP();
-                              });
-                            }
-                          } catch (err) {
-                            console.log(err.message);
-                          }
-
+                      // Find previous version of file
+                      let prevFile = false;
+                      oldFiles.forEach((oldFile) => {
+                        if (oldFile.getName() === newFile.getName()) {
+                          prevFile = oldFile;
                         }
                       });
 
-                      console.log(`#${commit.getID()}: finished`);
-                      resolve(commit);
-                    }
-                  });
+                      // Check if file actually exists
+                      if (prevFile === false) {
+                        this.fetchFileContent(commit, newFile).then((newFile) => {
+                          newFile.setAdditions(newFile.getLines());
+                          commit.addFile(newFile);
+                          commit.calculateEXP();
+                          checkedFiles += 1;
+                          console.log(`#${commit.getID()}: diffed files (${checkedFiles}/${newFiles.length})`);
+                          if (checkedFiles === newFiles.length) {
+                            console.log(`#${commit.getID()}: finished`);
+                            resolve(commit);
+                          }
+                        });
+
+                      // Diff file content
+                      } else {
+                        try {
+                          this.fetchFileContent(commit, newFile).then((newFile) => {
+                            this.fetchFileContent(prevCommit, prevFile).then((prevFile) => {
+                              const diff = jsdiff.structuredPatch(prevFile.getName(), newFile.getName(), atob(prevFile.getContent()), atob(newFile.getContent()), '', '');
+                              if (diff.hunks.length > 0) {
+                                diff.hunks.forEach((hunk) => {
+                                  checkedFiles += 1;
+                                  console.log(`#${commit.getID()}: diffed files (${checkedFiles}/${newFiles.length}) - activity on ${newFile.getName()}`);
+                                  newFile.setAdditions(hunk.newLines - hunk.oldLines);
+                                  commit.addFile(newFile);
+                                  commit.calculateEXP();
+                                  if (checkedFiles === newFiles.length) {
+                                    console.log(`#${commit.getID()}: finished`);
+                                    resolve(commit);
+                                  }
+                                });
+                              } else {
+                                checkedFiles += 1;
+                                console.log(`#${commit.getID()}: diffed files (${checkedFiles}/${newFiles.length})`);
+                                if (checkedFiles === newFiles.length) {
+                                  console.log(`#${commit.getID()}: finished`);
+                                  resolve(commit);
+                                }
+                              }
+                            });
+                          });
+                        } catch (err) {
+                          console.log(err.message);
+                        }
+
+                      }
+                    });
+                  }
+                });
               }
             });
         });
@@ -168,14 +195,11 @@ class GitLab {
               switch (treeData.type) {
                 case 'blob': {
                   if (file.getSkill()) {
-                    this.fetchFileContent(commit, file)
-                      .then((fileWithContent) => {
-                        files.push(fileWithContent);
-                        checkedFiles += 1;
-                        if (checkedFiles === tree.length) {
-                          resolve(files);
-                        }
-                      });
+                    files.push(file);
+                    checkedFiles += 1;
+                    if (checkedFiles === tree.length) {
+                      resolve(files);
+                    }
                   } else {
                     checkedFiles += 1;
                     if (checkedFiles === tree.length) {
@@ -221,6 +245,10 @@ class GitLab {
           if (response) {
             file.setContent(response.content);
           }
+          resolve(file);
+        })
+        .catch((err) => {
+          console.log(`#${commit.getID()}: error loading content for file ${file.getName()} - ${err.message}`);
           resolve(file);
         });
     });

@@ -89,6 +89,7 @@ class DevRPG {
             resolve(result);
           }
         }).catch((err) => {
+          console.log(err);
           checkedCommits += 1;
           if (checkedCommits === data.commits.length) {
             resolve(result);
