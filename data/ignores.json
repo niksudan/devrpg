@@ -2,7 +2,9 @@
   ".gitignore",
   ".gitkeep",
   ".htaccess",
-  "wp-content/plugins",
+  "plugins/",
+  "uploads/",
+  "wp-content/languages/",
   "wp-admin/",
   "wp-includes/",
   "wp-config",
@@ -30,5 +32,6 @@
   "dist/",
   "bower_components/",
   "node_modules/",
-  "vendor/"
+  "vendor/",
+  "trellis/"
 ]
