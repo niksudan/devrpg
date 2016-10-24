@@ -44,6 +44,7 @@ class DevRPG {
   process(data) {
     return new Promise((resolve, reject) => {
       const result = [];
+      const cache = [];
       let checkedCommits = 0;
 
       // Only accept push events
@@ -64,35 +65,64 @@ class DevRPG {
 
       data.commits.forEach((commitData) => {
 
-        // Generate user
-        const user = new User({
-          name: commitData.author.name,
-          email: commitData.author.email,
-        });
-        if (!result[user.getName()]) {
-          result[user.getName()] = user;
-        }
-
-        // Fetch commit data
-        global.gitlab.fetchCommit(new Commit({
+        // Generate commit
+        const newCommit = new Commit({
           id: commitData.id,
           message: commitData.message,
           date: new Date(commitData.timestamp),
           url: commitData.url,
           project,
-        })).then((commit) => {
+        });
 
-          // Update result
-          result[user.getName()].addCommit(commit);
-          checkedCommits += 1;
-          if (checkedCommits === data.commits.length) {
-            resolve(result);
+        // Get cached user
+        new Promise((resolve) => {
+          const user = new User({
+            name: commitData.author.name,
+            email: commitData.author.email,
+          });
+          if (!cache[user.getName()]) {
+            result[user.getName()] = user;
+            global.firebase.get(`users/${user.getName()}`).then((userResponse) => {
+              if (userResponse !== null) {
+                cache[user.getName()] = new User(userResponse);
+              } else {
+                cache[user.getName()] = user;
+              }
+              resolve(cache[user.getName()]);
+            });
+          } else {
+            resolve(cache[user.getName()]);
           }
-        }).catch((err) => {
-          console.log(err);
-          checkedCommits += 1;
-          if (checkedCommits === data.commits.length) {
-            resolve(result);
+        }).then((user) => {
+
+          // Check that commit does not already exist
+          if (!user.hasCommit(newCommit)) {
+            console.log(`#${newCommit.getID()}: commit is new`);
+
+            // Fetch commit data and update result
+            global.gitlab.fetchCommit(newCommit).then((commit) => {
+              result[user.getName()].addCommit(commit);
+              checkedCommits += 1;
+              if (checkedCommits === data.commits.length) {
+                resolve(result);
+              }
+
+            // Problem fetching commit data
+            }).catch((err) => {
+              console.log(err);
+              checkedCommits += 1;
+              if (checkedCommits === data.commits.length) {
+                resolve(result);
+              }
+            });
+
+          // Commit already exists
+          } else {
+            console.log(`#${newCommit.getID()}: commit already checked`);
+            checkedCommits += 1;
+            if (checkedCommits === data.commits.length) {
+              resolve(result);
+            }
           }
         });
       });
@@ -121,21 +151,12 @@ class DevRPG {
 
           // Cycle through parsed commits
           for (const i of Object.keys(newCommits)) {
-            let found = false;
 
             // Determine if commit has already been stored
             const newCommit = newCommits[i];
-            if (Object.keys(user.getCommits()).length !== 0) {
-              for (const j of Object.keys(user.getCommits())) {
-                const storedCommit = new Commit(user.getCommits()[j]);
-                if (newCommit.getID() === storedCommit.getID()) {
-                  found = true;
-                }
-              }
-            }
+            if (!user.hasCommit(newCommit)) {
 
-            // Add if not found
-            if (!found) {
+              // Add if not found
               user.addCommit(newCommit);
               for (const k of Object.keys(newCommit.getSkills())) {
                 const skill = newCommit.getSkills()[k];

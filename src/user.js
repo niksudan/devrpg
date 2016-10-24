@@ -1,3 +1,5 @@
+const Commit = require('./commit');
+
 const expBase = 100;
 const expModifier = 1.5;
 
@@ -81,6 +83,26 @@ class User {
       }
     }
     this.getSkills()[skillName].level = level;
+  }
+
+  /**
+   * @param Commit commit
+   * @return boolean
+   */
+  hasCommit(commit) {
+    if (Object.keys(this.getCommits()).length !== 0) {
+      for (const j of Object.keys(this.getCommits())) {
+        const commitData = this.getCommits()[j];
+        let storedCommit = commitData;
+        if (storedCommit.constructor.name !== 'Commit') {
+          storedCommit = new Commit(commitData);
+        }
+        if (commit.getID() === storedCommit.getID()) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }
 
