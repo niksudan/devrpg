@@ -61,6 +61,10 @@ class Commit {
     this.addAdditions(file.getAdditions());
   }
 
+  clearFiles() {
+    this.files = [];
+  }
+
   /**
    * @return int
    */

@@ -184,6 +184,7 @@ class DevRPG {
             if (!user.hasCommit(newCommit)) {
 
               // Add if not found
+              newCommit.clearFiles();
               user.addCommit(newCommit);
               for (const k of Object.keys(newCommit.getSkills())) {
                 const skill = newCommit.getSkills()[k];
