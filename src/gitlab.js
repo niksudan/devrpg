@@ -50,11 +50,10 @@ class GitLab {
           if (commitData.parent_ids.length > 1) {
             console.log(`#${commit.getID()}: commit was a merge`);
             resolve(commit);
-          }
 
           // Fetch major files for commit
-          this.fetchFiles(commit)
-            .then((newFiles) => {
+          } else {
+            this.fetchFiles(commit).then((newFiles) => {
 
               // Check if project has any trackable files
               if (newFiles.length === 0) {
@@ -180,6 +179,7 @@ class GitLab {
                 });
               }
             });
+          }
         });
     });
   }
