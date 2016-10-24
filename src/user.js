@@ -76,7 +76,7 @@ class User {
       this.getSkills()[skillName].currentExp = exp;
       this.getSkills()[skillName].neededExp = amount;
       exp -= amount;
-      if (exp > 0) {
+      if (exp >= 0) {
         level += 1;
         amount *= expModifier;
         amount = Math.ceil(amount);
