@@ -44,7 +44,6 @@ class DevRPG {
   process(data) {
     return new Promise((resolve, reject) => {
       const result = [];
-      const cache = [];
       let checkedCommits = 0;
 
       // Only accept push events
@@ -66,7 +65,7 @@ class DevRPG {
       data.commits.forEach((commitData) => {
 
         // Generate commit
-        const newCommit = new Commit({
+        const commit = new Commit({
           id: commitData.id,
           message: commitData.message,
           date: new Date(commitData.timestamp),
@@ -74,57 +73,73 @@ class DevRPG {
           project,
         });
 
-        // Get cached user
-        new Promise((resolve) => {
+        // Check if commit data has any activity
+        if (commitData.added.length > 0 || commitData.modified.length > 0) {
+
           const user = new User({
             name: commitData.author.name,
             email: commitData.author.email,
           });
-          if (!cache[user.getName()]) {
+
+          if (!result[user.getName()]) {
             result[user.getName()] = user;
-            global.firebase.get(`users/${user.getName()}`).then((userResponse) => {
-              if (userResponse !== null) {
-                cache[user.getName()] = new User(userResponse);
-              } else {
-                cache[user.getName()] = user;
-              }
-              resolve(cache[user.getName()]);
-            });
-          } else {
-            resolve(cache[user.getName()]);
           }
-        }).then((user) => {
 
-          // Check that commit does not already exist
-          if (!user.hasCommit(newCommit)) {
-            console.log(`#${newCommit.getID()}: commit is new`);
+          // Diff added files
+          new Promise((resolve) => {
+            let checkedFiles = 0;
+            if (commitData.added.length > 0) {
+              commitData.added.forEach((filename) => {
+                global.gitlab.diffFile(commit, filename, true).then((file) => {
+                  commit.addFile(file);
+                  commit.calculateEXP();
+                  checkedFiles += 1;
+                  if (checkedFiles === commitData.added.length) {
+                    resolve(commit);
+                  }
+                });
+              });
+            } else {
+              resolve(commit);
+            }
 
-            // Fetch commit data and update result
-            global.gitlab.fetchCommit(newCommit).then((commit) => {
+          // Diff modified files
+          }).then((commit) => {
+            new Promise((resolve) => {
+              let checkedFiles = 0;
+              if (commitData.modified.length > 0) {
+                commitData.modified.forEach((filename) => {
+                  global.gitlab.diffFile(commit, filename, false).then((file) => {
+                    commit.addFile(file);
+                    commit.calculateEXP();
+                    checkedFiles += 1;
+                    if (checkedFiles === commitData.modified.length) {
+                      resolve(commit);
+                    }
+                  });
+                });
+              } else {
+                resolve(commit);
+              }
+
+            // Append commit to result
+            }).then((commit) => {
               result[user.getName()].addCommit(commit);
               checkedCommits += 1;
               if (checkedCommits === data.commits.length) {
                 resolve(result);
               }
-
-            // Problem fetching commit data
-            }).catch((err) => {
-              console.log(err);
-              checkedCommits += 1;
-              if (checkedCommits === data.commits.length) {
-                resolve(result);
-              }
             });
+          });
 
-          // Commit already exists
-          } else {
-            console.log(`#${newCommit.getID()}: commit already checked`);
-            checkedCommits += 1;
-            if (checkedCommits === data.commits.length) {
-              resolve(result);
-            }
+        // No activity submitted
+        } else {
+          console.log(`#${commit.getID()}: no activity on commit`);
+          checkedCommits += 1;
+          if (checkedCommits === data.commits.length) {
+            resolve(result);
           }
-        });
+        }
       });
     });
   }
@@ -177,34 +192,6 @@ class DevRPG {
         });
       }
     });
-  }
-
-  /**
-   * Debug function used to fetch commit data
-   * @param string commitID
-   * @param int projectID
-   * @param string projectPath
-   */
-  testCommit(commitID, projectID, projectPath) {
-    try {
-      global.gitlab.fetchCommit(new Commit({
-        id: commitID,
-        project: new Project({
-          id: projectID,
-          path: projectPath,
-        }),
-      })).then((commit) => {
-        console.log(commit.getSkills());
-        process.exit(1);
-      }).catch((err) => {
-        console.log(err);
-        process.exit(0);
-      });
-    } catch (err) {
-      console.log(err.message);
-      process.exit(0);
-    }
-
   }
 }
 
