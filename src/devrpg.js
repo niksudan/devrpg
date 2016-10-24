@@ -24,9 +24,9 @@ class DevRPG {
       if (req.headers['x-gitlab-event']) {
         const data = req.body;
         this.process(data).then((processedData) => {
+          res.send('Success');
           this.store(processedData).then((result) => {
             callback(result);
-            res.send('Success');
           });
         });
       }
