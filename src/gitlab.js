@@ -92,7 +92,7 @@ class GitLab {
         });
 
       } else {
-        reject('Invalid file');
+        reject(`${filename} @ #${commit.getID()}: ignored or unskilled file`);
       }
 
     });
