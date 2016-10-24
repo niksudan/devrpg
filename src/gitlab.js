@@ -142,15 +142,20 @@ class GitLab {
                             this.fetchFileContent(prevCommit, prevFile).then((prevFile) => {
                               const diff = jsdiff.structuredPatch(prevFile.getName(), newFile.getName(), atob(prevFile.getContent()), atob(newFile.getContent()), '', '');
                               if (diff.hunks.length > 0) {
+                                let checkedDiffs = 0;
                                 diff.hunks.forEach((hunk) => {
-                                  checkedFiles += 1;
-                                  console.log(`#${commit.getID()}: diffed files (${checkedFiles}/${newFiles.length}) - activity on ${newFile.getName()}`);
-                                  newFile.setAdditions(hunk.newLines - hunk.oldLines);
-                                  commit.addFile(newFile);
-                                  commit.calculateEXP();
-                                  if (checkedFiles === newFiles.length) {
-                                    console.log(`#${commit.getID()}: finished`);
-                                    resolve(commit);
+                                  checkedDiffs += 1;
+                                  console.log(`#${commit.getID()}: diff ${checkedDiffs} of ${diff.hunks.length} on ${newFile.getName()}`);
+                                  newFile.addAdditions(hunk.newLines - hunk.oldLines);
+                                  if (checkedDiffs === diff.hunks.length) {
+                                    checkedFiles += 1;
+                                    console.log(`#${commit.getID()}: diffed files (${checkedFiles}/${newFiles.length})`);
+                                    commit.addFile(newFile);
+                                    commit.calculateEXP();
+                                    if (checkedFiles === newFiles.length) {
+                                      console.log(`#${commit.getID()}: finished`);
+                                      resolve(commit);
+                                    }
                                   }
                                 });
                               } else {
@@ -170,6 +175,8 @@ class GitLab {
                       }
                     });
                   }
+                }).catch((err) => {
+                  console.log(err.message);
                 });
               }
             });

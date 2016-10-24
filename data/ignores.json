@@ -33,5 +33,6 @@
   "bower_components/",
   "node_modules/",
   "vendor/",
-  "trellis/"
+  "trellis/",
+  "old/"
 ]
