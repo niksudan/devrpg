@@ -36,58 +36,64 @@ class GitLab {
    * @return Promise
    */
   diffFile(commit, filename, addition) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
 
       const file = new File({
         name: filename,
         project: commit.getProject(),
       });
 
-      // Fetch file content
-      this.fetchFileContent(commit, file).then((newFile) => {
+      if (!file.isIgnored() && file.getSkill()) {
 
-        // Add all lines if addition
-        if (addition) {
-          console.log(`${filename} @ #${commit.getID()}: detected addition`);
-          newFile.setAdditions(newFile.getLines());
-          resolve(newFile);
+        // Fetch file content
+        this.fetchFileContent(commit, file).then((newFile) => {
 
-        // Fetch parent if modified
-        } else {
-          this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
-            if (!commitData || !commitData.parent_ids.length) {
-              console.log(`${filename} @ #${commit.getID()}: error loading parent commit`);
-              resolve(newFile);
-            } else {
-              this.fetchFileContent(new Commit({
-                id: commitData.parent_ids[0],
-                project: commit.getProject(),
-              }), file).then((oldFile) => {
+          // Add all lines if addition
+          if (addition) {
+            console.log(`${filename} @ #${commit.getID()}: detected addition`);
+            newFile.setAdditions(newFile.getLines());
+            resolve(newFile);
 
-                // Diff files
-                const diff = jsdiff.structuredPatch(
-                  oldFile.getName(),
-                  newFile.getName(),
-                  atob(oldFile.getContent()),
-                  atob(newFile.getContent()),
-                  '', ''
-                );
-
-                // Parse diff
-                if (diff.hunks.length > 0) {
-                  diff.hunks.forEach((hunk) => {
-                    newFile.addAdditions(hunk.newLines - hunk.oldLines);
-                  });
-                  console.log(`${filename} @ #${commit.getID()}: parsed ${diff.hunks.length} diff(s)`);
-                } else {
-                  console.log(`${filename} @ #${commit.getID()}: no diffs found`);
-                }
+          // Fetch parent if modified
+          } else {
+            this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
+              if (!commitData || !commitData.parent_ids.length) {
+                console.log(`${filename} @ #${commit.getID()}: error loading parent commit`);
                 resolve(newFile);
-              });
-            }
-          });
-        }
-      });
+              } else {
+                this.fetchFileContent(new Commit({
+                  id: commitData.parent_ids[0],
+                  project: commit.getProject(),
+                }), file).then((oldFile) => {
+
+                  // Diff files
+                  const diff = jsdiff.structuredPatch(
+                    oldFile.getName(),
+                    newFile.getName(),
+                    atob(oldFile.getContent()),
+                    atob(newFile.getContent()),
+                    '', ''
+                  );
+
+                  // Parse diff
+                  if (diff.hunks.length > 0) {
+                    diff.hunks.forEach((hunk) => {
+                      newFile.addAdditions(hunk.newLines - hunk.oldLines);
+                    });
+                    console.log(`${filename} @ #${commit.getID()}: parsed ${diff.hunks.length} diff(s)`);
+                  } else {
+                    console.log(`${filename} @ #${commit.getID()}: no diffs found`);
+                  }
+                  resolve(newFile);
+                });
+              }
+            });
+          }
+        });
+
+      } else {
+        reject('Invalid file');
+      }
 
     });
   }

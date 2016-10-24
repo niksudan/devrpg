@@ -97,6 +97,12 @@ class DevRPG {
                   if (checkedFiles === commitData.added.length) {
                     resolve(commit);
                   }
+                }).catch((err) => {
+                  console.log(err);
+                  checkedFiles += 1;
+                  if (checkedFiles === commitData.modified.length) {
+                    resolve(commit);
+                  }
                 });
               });
             } else {
@@ -112,6 +118,12 @@ class DevRPG {
                   global.gitlab.diffFile(commit, filename, false).then((file) => {
                     commit.addFile(file);
                     commit.calculateEXP();
+                    checkedFiles += 1;
+                    if (checkedFiles === commitData.modified.length) {
+                      resolve(commit);
+                    }
+                  }).catch((err) => {
+                    console.log(err);
                     checkedFiles += 1;
                     if (checkedFiles === commitData.modified.length) {
                       resolve(commit);
