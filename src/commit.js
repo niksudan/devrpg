@@ -76,7 +76,7 @@ class Commit {
    * @param int additions
    */
   addAdditions(additions) {
-    this.additions += Math.max(0, additions);
+    this.additions += additions;
   }
 
   /**
@@ -87,17 +87,21 @@ class Commit {
   }
 
   /**
+   * @return float
+   */
+  getBonusEXP() {
+    this.bonusExp = Math.min(Math.floor(this.getFiles().length / 5) * 5, 20);
+    return this.bonusExp;
+  }
+
+  /**
    * Calculate EXP for all files
    */
   calculateEXP() {
     this.skills = [];
-
-    // Calculate bonus EXP
-    this.bonusExp = Math.min(Math.floor(this.getFiles().length / 5) * 5, 20);
-
     this.getFiles().forEach((file) => {
 
-      // Push individual skills
+      // Parse file skills and store to commit
       if (file.getSkill()) {
         const additions = file.getAdditions() * file.getSkillHandicap();
         let found = false;
@@ -109,13 +113,17 @@ class Commit {
           }
         }
         if (!found) {
-          this.skills[file.getSkillName()] = { name: file.getSkillName(), additions, exp: 0 };
+          this.skills[file.getSkillName()] = {
+            name: file.getSkillName(),
+            additions: Math.max(additions, 0),
+            exp: 0,
+          };
         }
 
         // Calculate EXP and apply bonus EXP if necessary
         for (const i of Object.keys(this.getSkills())) {
           const skill = this.getSkills()[i];
-          skill.exp = Math.max(Math.min((Math.floor(skill.additions / 12) + 1) * 10, 50), 10) + this.bonusExp;
+          skill.exp = Math.max(Math.min((Math.floor(skill.additions / 12) + 1) * 10, 50), 10) + this.getBonusEXP();
         }
       }
     });

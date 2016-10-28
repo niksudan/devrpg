@@ -32,10 +32,10 @@ class GitLab {
    * Diff a file
    * @param Commit commit
    * @param string filename
-   * @param boolean additions
+   * @param string status
    * @return Promise
    */
-  diffFile(commit, filename, addition) {
+  diffFile(commit, filename, status) {
     return new Promise((resolve, reject) => {
 
       const file = new File({
@@ -49,8 +49,14 @@ class GitLab {
         this.fetchFileContent(commit, file).then((newFile) => {
 
           // Add all lines if addition
-          if (addition) {
+          if (status === 'addition') {
             console.log(`${filename} @ #${commit.getID()}: detected addition`);
+            newFile.setAdditions(newFile.getLines());
+            resolve(newFile);
+
+          // Remove all lines if removal
+          } else if (status === 'removal') {
+            console.log(`${filename} @ #${commit.getID()}: detected removal`);
             newFile.setAdditions(newFile.getLines());
             resolve(newFile);
 

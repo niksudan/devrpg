@@ -70,14 +70,14 @@ class File {
    * @param int additions
    */
   setAdditions(additions) {
-    this.additions = Math.max(0, additions);
+    this.additions = additions;
   }
 
   /**
    * @param int additions
    */
   addAdditions(additions) {
-    this.additions += Math.max(0, additions);
+    this.additions += additions;
   }
 
   /**

@@ -74,7 +74,7 @@ class DevRPG {
         });
 
         // Check if commit data has any activity
-        if (commitData.added.length > 0 || commitData.modified.length > 0) {
+        if (commitData.added.length > 0 || commitData.modified.length > 0 || commitData.removed.length > 0) {
 
           const user = new User({
             name: commitData.author.name,
@@ -90,7 +90,7 @@ class DevRPG {
             let checkedFiles = 0;
             if (commitData.added.length > 0) {
               commitData.added.forEach((filename) => {
-                global.gitlab.diffFile(commit, filename, true).then((file) => {
+                global.gitlab.diffFile(commit, filename, 'addition').then((file) => {
                   commit.addFile(file);
                   commit.calculateEXP();
                   checkedFiles += 1;
@@ -100,7 +100,7 @@ class DevRPG {
                 }).catch((err) => {
                   console.log(err);
                   checkedFiles += 1;
-                  if (checkedFiles === commitData.modified.length) {
+                  if (checkedFiles === commitData.added.length) {
                     resolve(commit);
                   }
                 });
@@ -109,23 +109,23 @@ class DevRPG {
               resolve(commit);
             }
 
-          // Diff modified files
+          // Diff removed files
           }).then((commit) => {
             new Promise((resolve) => {
               let checkedFiles = 0;
-              if (commitData.modified.length > 0) {
-                commitData.modified.forEach((filename) => {
-                  global.gitlab.diffFile(commit, filename, false).then((file) => {
+              if (commitData.added.length > 0) {
+                commitData.added.forEach((filename) => {
+                  global.gitlab.diffFile(commit, filename, 'addition').then((file) => {
                     commit.addFile(file);
                     commit.calculateEXP();
                     checkedFiles += 1;
-                    if (checkedFiles === commitData.modified.length) {
+                    if (checkedFiles === commitData.removed.length) {
                       resolve(commit);
                     }
                   }).catch((err) => {
                     console.log(err);
                     checkedFiles += 1;
-                    if (checkedFiles === commitData.modified.length) {
+                    if (checkedFiles === commitData.removed.length) {
                       resolve(commit);
                     }
                   });
@@ -134,13 +134,39 @@ class DevRPG {
                 resolve(commit);
               }
 
-            // Append commit to result
+            // Diff modified files
             }).then((commit) => {
-              result[user.getName()].addCommit(commit);
-              checkedCommits += 1;
-              if (checkedCommits === data.commits.length) {
-                resolve(result);
-              }
+              new Promise((resolve) => {
+                let checkedFiles = 0;
+                if (commitData.modified.length > 0) {
+                  commitData.modified.forEach((filename) => {
+                    global.gitlab.diffFile(commit, filename, 'modified').then((file) => {
+                      commit.addFile(file);
+                      commit.calculateEXP();
+                      checkedFiles += 1;
+                      if (checkedFiles === commitData.modified.length) {
+                        resolve(commit);
+                      }
+                    }).catch((err) => {
+                      console.log(err);
+                      checkedFiles += 1;
+                      if (checkedFiles === commitData.modified.length) {
+                        resolve(commit);
+                      }
+                    });
+                  });
+                } else {
+                  resolve(commit);
+                }
+
+              // Append commit to result
+              }).then((commit) => {
+                result[user.getName()].addCommit(commit);
+                checkedCommits += 1;
+                if (checkedCommits === data.commits.length) {
+                  resolve(result);
+                }
+              });
             });
           });
 
