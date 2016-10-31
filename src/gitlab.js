@@ -66,6 +66,9 @@ class GitLab {
               if (!commitData || !commitData.parent_ids.length) {
                 console.log(`${filename} @ #${commit.getID()}: error loading parent commit`);
                 resolve(newFile);
+              } else if (commitData.parent_ids.length > 1) {
+                console.log(`${filename} @ #${commit.getID()}: commit was a merge`);
+                resolve(newFile);
               } else {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
