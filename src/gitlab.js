@@ -70,7 +70,10 @@ class GitLab {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
                   project: commit.getProject(),
-                }), file).then((oldFile) => {
+                }), new File({
+                  name: filename,
+                  project: commit.getProject(),
+                })).then((oldFile) => {
 
                   // Diff files
                   const diff = jsdiff.structuredPatch(
