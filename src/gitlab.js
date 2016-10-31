@@ -68,10 +68,10 @@ class GitLab {
                 resolve(newFile);
               } else if (commitData.parent_ids.length > 1) {
                 console.log(`${filename} @ #${commit.getID()}: commit was a merge`);
-                resolve(newFile)
+                resolve(newFile);
               } else if (new Date().getMonth() !== new Date(commitData.created_at).getMonth()) {
                 console.log(`${filename} @ #${commit.getID()}: commit was not made this month`);
-                resolve(newFile)
+                resolve(newFile);
               } else {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
