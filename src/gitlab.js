@@ -65,13 +65,7 @@ class GitLab {
                 newFile.setAdditions(newFile.getLines());
                 resolve(newFile);
 
-              // Remove all lines if removal
-              } else if (status === 'removal') {
-                console.log(`${filename} @ #${commit.getID()}: detected removal`);
-                newFile.setAdditions(newFile.getLines());
-                resolve(newFile);
-
-              // Fetch parent if modified
+              // Fetch parent if removal or modified
               } else {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
@@ -81,25 +75,31 @@ class GitLab {
                   project: commit.getProject(),
                 })).then((oldFile) => {
 
-                  // Diff files
-                  const diff = jsdiff.structuredPatch(
-                    oldFile.getName(),
-                    newFile.getName(),
-                    atob(oldFile.getContent()),
-                    atob(newFile.getContent()),
-                    '', ''
-                  );
+                  // Remove all lines if removal
+                  if (status === 'removal') {
+                    console.log(`${filename} @ #${commit.getID()}: detected removal`);
+                    oldFile.setAdditions(-oldFile.getLines());
+                    resolve(oldFile);
 
-                  // Parse diff
-                  if (diff.hunks.length > 0) {
-                    diff.hunks.forEach((hunk) => {
-                      newFile.addAdditions(hunk.newLines - hunk.oldLines);
-                    });
-                    console.log(`${filename} @ #${commit.getID()}: parsed ${diff.hunks.length} diff(s)`);
+                  // Calculate diff if modified
                   } else {
-                    console.log(`${filename} @ #${commit.getID()}: no diffs found`);
+                    const diff = jsdiff.structuredPatch(
+                      oldFile.getName(),
+                      newFile.getName(),
+                      atob(oldFile.getContent()),
+                      atob(newFile.getContent()),
+                      '', ''
+                    );
+                    if (diff.hunks.length > 0) {
+                      diff.hunks.forEach((hunk) => {
+                        newFile.addAdditions(hunk.newLines - hunk.oldLines);
+                      });
+                      console.log(`${filename} @ #${commit.getID()}: parsed ${diff.hunks.length} diff(s)`);
+                    } else {
+                      console.log(`${filename} @ #${commit.getID()}: no diffs found`);
+                    }
+                    resolve(newFile);
                   }
-                  resolve(newFile);
                 });
               }
             });
@@ -126,7 +126,8 @@ class GitLab {
           resolve(file);
         })
         .catch((err) => {
-          console.log(`${file.getName()} @ #${commit.getID()}: error loading file content - ${err.message}`);
+          const message = JSON.parse(err).message;
+          console.log(`${file.getName()} @ #${commit.getID()}: error loading file content - ${message}`);
           resolve(file);
         });
     });
