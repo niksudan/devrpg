@@ -43,35 +43,35 @@ class GitLab {
         project: commit.getProject(),
       });
 
-      if (!file.isIgnored() && file.getSkill()) {
-
-        // Fetch file content
-        this.fetchFileContent(commit, file).then((newFile) => {
-
-          // Add all lines if addition
-          if (status === 'addition') {
-            console.log(`${filename} @ #${commit.getID()}: detected addition`);
-            newFile.setAdditions(newFile.getLines());
-            resolve(newFile);
-
-          // Remove all lines if removal
-          } else if (status === 'removal') {
-            console.log(`${filename} @ #${commit.getID()}: detected removal`);
-            newFile.setAdditions(newFile.getLines());
-            resolve(newFile);
-
-          // Fetch parent if modified
+      // Check that file and commit properties are valid
+      if (file.isIgnored() || !file.getSkill()) {
+        reject(`${filename} @ #${commit.getID()}: ignored or unskilled file`);
+      } else {
+        this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
+          if (!commitData || !commitData.parent_ids.length) {
+            reject(`${filename} @ #${commit.getID()}: error loading parent commit`);
+          } else if (commitData.parent_ids.length > 1) {
+            reject(`${filename} @ #${commit.getID()}: commit was a merge`);
+          } else if (new Date().getMonth() !== new Date(commitData.created_at).getMonth()) {
+            reject(`${filename} @ #${commit.getID()}: commit was not made this month`);
           } else {
-            this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
-              if (!commitData || !commitData.parent_ids.length) {
-                console.log(`${filename} @ #${commit.getID()}: error loading parent commit`);
-                reject(`${filename} @ #${commit.getID()}: error loading parent commit`);
-              } else if (commitData.parent_ids.length > 1) {
-                console.log(`${filename} @ #${commit.getID()}: commit was a merge`);
-                reject(`${filename} @ #${commit.getID()}: commit was a merge`);
-              } else if (new Date().getMonth() !== new Date(commitData.created_at).getMonth()) {
-                console.log(`${filename} @ #${commit.getID()}: commit was not made this month`);
-                reject(`${filename} @ #${commit.getID()}: commit was not made this month`);
+
+            // Fetch file content
+            this.fetchFileContent(commit, file).then((newFile) => {
+
+              // Add all lines if addition
+              if (status === 'addition') {
+                console.log(`${filename} @ #${commit.getID()}: detected addition`);
+                newFile.setAdditions(newFile.getLines());
+                resolve(newFile);
+
+              // Remove all lines if removal
+              } else if (status === 'removal') {
+                console.log(`${filename} @ #${commit.getID()}: detected removal`);
+                newFile.setAdditions(newFile.getLines());
+                resolve(newFile);
+
+              // Fetch parent if modified
               } else {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
@@ -105,9 +105,6 @@ class GitLab {
             });
           }
         });
-
-      } else {
-        reject(`${filename} @ #${commit.getID()}: ignored or unskilled file`);
       }
 
     });
