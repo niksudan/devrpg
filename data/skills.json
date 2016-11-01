@@ -15,11 +15,6 @@
     "handicap": 1
   },
   {
-    "name": "JavaScript",
-    "includes": ["\\.js$", "\\.jsx$"],
-    "handicap": 1
-  },
-  {
     "name": "Documentation",
     "includes": ["\\.md$", "\\.txt$"],
     "handicap": 2
@@ -32,6 +27,16 @@
   {
     "name": "Build Tools",
     "includes": ["gulpfile", "gruntfile", "webpack\\.config"],
+    "handicap": 2
+  },
+  {
+    "name": "JavaScript",
+    "includes": ["\\.js$", "\\.jsx$"],
+    "handicap": 1
+  },
+  {
+    "name": "Configuration",
+    "includes": ["\\.yml$", "\\.json$", "\\.toml"],
     "handicap": 2
   },
   {
