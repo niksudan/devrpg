@@ -9,6 +9,7 @@ class User {
     this.email = config.email;
     this.skills = config.skills === undefined ? [] : config.skills;
     this.commits = config.commits === undefined ? [] : config.commits;
+    this.stats = config.stats === undefined ? [] : config.stats;
   }
 
   /**
