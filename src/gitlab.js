@@ -65,13 +65,13 @@ class GitLab {
             this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
               if (!commitData || !commitData.parent_ids.length) {
                 console.log(`${filename} @ #${commit.getID()}: error loading parent commit`);
-                resolve(newFile);
+                reject(`${filename} @ #${commit.getID()}: error loading parent commit`);
               } else if (commitData.parent_ids.length > 1) {
                 console.log(`${filename} @ #${commit.getID()}: commit was a merge`);
-                resolve(newFile);
+                reject(`${filename} @ #${commit.getID()}: commit was a merge`);
               } else if (new Date().getMonth() !== new Date(commitData.created_at).getMonth()) {
                 console.log(`${filename} @ #${commit.getID()}: commit was not made this month`);
-                resolve(newFile);
+                reject(`${filename} @ #${commit.getID()}: commit was not made this month`);
               } else {
                 this.fetchFileContent(new Commit({
                   id: commitData.parent_ids[0],
