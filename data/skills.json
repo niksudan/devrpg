@@ -5,21 +5,6 @@
     "handicap": 1
   },
   {
-    "name": "Styling",
-    "includes": ["\\.css$", "\\.scss$", "\\.styl$"],
-    "handicap": 1
-  },
-  {
-    "name": "PHP",
-    "includes": ["\\.php$"],
-    "handicap": 1
-  },
-  {
-    "name": "Documentation",
-    "includes": ["\\.md$", "\\.txt$"],
-    "handicap": 2
-  },
-  {
     "name": "Package Managing",
     "includes": ["package\\.json$", "bower\\.json$", ".bowerrc$", "composer\\.json$"],
     "handicap": 3
@@ -30,9 +15,54 @@
     "handicap": 2
   },
   {
+    "name": "Angular",
+    "includes": ["\\.js$"],
+    "tag": "angular",
+    "handicap": 1
+  },
+  {
+    "name": "Laravel",
+    "includes": ["\\.php$"],
+    "tag": "laravel",
+    "handicap": 1
+  },
+  {
+    "name": "React",
+    "includes": ["\\.js$", "\\.jsx$"],
+    "tag": "react",
+    "handicap": 1
+  },
+  {
+    "name": "WordPress",
+    "includes": ["\\.php$"],
+    "tag": "wordpress",
+    "handicap": 1
+  },
+  {
+    "name": "CodeIgniter",
+    "includes": ["\\.php$"],
+    "tag": "codeigniter",
+    "handicap": 1
+  },
+  {
     "name": "JavaScript",
     "includes": ["\\.js$", "\\.jsx$"],
     "handicap": 1
+  },
+  {
+    "name": "PHP",
+    "includes": ["\\.php$"],
+    "handicap": 1
+  },
+  {
+    "name": "Styling",
+    "includes": ["\\.css$", "\\.scss$", "\\.styl$"],
+    "handicap": 1
+  },
+  {
+    "name": "Documentation",
+    "includes": ["\\.md$", "\\.txt$"],
+    "handicap": 2
   },
   {
     "name": "Configuration",

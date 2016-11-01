@@ -53,79 +53,54 @@ class DevRPG {
       }
 
       // Generate project
-      const project = new Project({
+      global.gitlab.getProject(new Project({
         id: data.project_id,
         name: data.project.name,
         description: data.project.name,
         namespace: data.project.namespace,
         url: data.project.web_url,
         path: data.project.path_with_namespace,
-      });
+      })).then((project) => {
 
-      data.commits.forEach((commitData) => {
+        data.commits.forEach((commitData) => {
 
-        // Generate commit
-        const commit = new Commit({
-          id: commitData.id,
-          message: commitData.message,
-          date: new Date(commitData.timestamp),
-          url: commitData.url,
-          project,
-        });
-
-        // Check if commit data has any activity
-        if (commitData.added.length > 0 || commitData.modified.length > 0 || commitData.removed.length > 0) {
-
-          const user = new User({
-            name: commitData.author.name,
-            email: commitData.author.email,
+          // Generate commit
+          const commit = new Commit({
+            id: commitData.id,
+            message: commitData.message,
+            date: new Date(commitData.timestamp),
+            url: commitData.url,
+            project,
           });
 
-          if (!result[user.getName()]) {
-            result[user.getName()] = user;
-          }
+          // Check if commit data has any activity
+          if (commitData.added.length > 0 || commitData.modified.length > 0 || commitData.removed.length > 0) {
 
-          // Diff added files
-          new Promise((resolve) => {
-            let checkedFiles = 0;
-            if (commitData.added.length > 0) {
-              commitData.added.forEach((filename) => {
-                global.gitlab.diffFile(commit, filename, 'addition').then((file) => {
-                  commit.addFile(file);
-                  commit.calculateEXP();
-                  checkedFiles += 1;
-                  if (checkedFiles === commitData.added.length) {
-                    resolve(commit);
-                  }
-                }).catch((err) => {
-                  console.log(err);
-                  checkedFiles += 1;
-                  if (checkedFiles === commitData.added.length) {
-                    resolve(commit);
-                  }
-                });
-              });
-            } else {
-              resolve(commit);
+            const user = new User({
+              name: commitData.author.name,
+              email: commitData.author.email,
+            });
+
+            if (!result[user.getName()]) {
+              result[user.getName()] = user;
             }
 
-          // Diff removed files
-          }).then((commit) => {
+            // Diff added files
             new Promise((resolve) => {
               let checkedFiles = 0;
-              if (commitData.removed.length > 0) {
-                commitData.removed.forEach((filename) => {
-                  global.gitlab.diffFile(commit, filename, 'removal').then((file) => {
+              if (commitData.added.length > 0) {
+                commitData.added.forEach((filename) => {
+                  global.gitlab.diffFile(commit, filename, 'addition').then((file) => {
                     commit.addFile(file);
                     commit.calculateEXP();
                     checkedFiles += 1;
-                    if (checkedFiles === commitData.removed.length) {
+                    if (checkedFiles === commitData.added.length) {
                       resolve(commit);
                     }
                   }).catch((err) => {
                     console.log(err);
                     checkedFiles += 1;
-                    if (checkedFiles === commitData.removed.length) {
+                    if (checkedFiles === commitData.added.length) {
                       resolve(commit);
                     }
                   });
@@ -134,23 +109,23 @@ class DevRPG {
                 resolve(commit);
               }
 
-            // Diff modified files
+            // Diff removed files
             }).then((commit) => {
               new Promise((resolve) => {
                 let checkedFiles = 0;
-                if (commitData.modified.length > 0) {
-                  commitData.modified.forEach((filename) => {
-                    global.gitlab.diffFile(commit, filename, 'modified').then((file) => {
+                if (commitData.removed.length > 0) {
+                  commitData.removed.forEach((filename) => {
+                    global.gitlab.diffFile(commit, filename, 'removal').then((file) => {
                       commit.addFile(file);
                       commit.calculateEXP();
                       checkedFiles += 1;
-                      if (checkedFiles === commitData.modified.length) {
+                      if (checkedFiles === commitData.removed.length) {
                         resolve(commit);
                       }
                     }).catch((err) => {
                       console.log(err);
                       checkedFiles += 1;
-                      if (checkedFiles === commitData.modified.length) {
+                      if (checkedFiles === commitData.removed.length) {
                         resolve(commit);
                       }
                     });
@@ -159,25 +134,51 @@ class DevRPG {
                   resolve(commit);
                 }
 
-              // Append commit to result
+              // Diff modified files
               }).then((commit) => {
-                result[user.getName()].addCommit(commit);
-                checkedCommits += 1;
-                if (checkedCommits === data.commits.length) {
-                  resolve(result);
-                }
+                new Promise((resolve) => {
+                  let checkedFiles = 0;
+                  if (commitData.modified.length > 0) {
+                    commitData.modified.forEach((filename) => {
+                      global.gitlab.diffFile(commit, filename, 'modified').then((file) => {
+                        commit.addFile(file);
+                        commit.calculateEXP();
+                        checkedFiles += 1;
+                        if (checkedFiles === commitData.modified.length) {
+                          resolve(commit);
+                        }
+                      }).catch((err) => {
+                        console.log(err);
+                        checkedFiles += 1;
+                        if (checkedFiles === commitData.modified.length) {
+                          resolve(commit);
+                        }
+                      });
+                    });
+                  } else {
+                    resolve(commit);
+                  }
+
+                // Append commit to result
+                }).then((commit) => {
+                  result[user.getName()].addCommit(commit);
+                  checkedCommits += 1;
+                  if (checkedCommits === data.commits.length) {
+                    resolve(result);
+                  }
+                });
               });
             });
-          });
 
-        // No activity submitted
-        } else {
-          console.log(`#${commit.getID()}: no activity on commit`);
-          checkedCommits += 1;
-          if (checkedCommits === data.commits.length) {
-            resolve(result);
+          // No activity submitted
+          } else {
+            console.log(`#${commit.getID()}: no activity on commit`);
+            checkedCommits += 1;
+            if (checkedCommits === data.commits.length) {
+              resolve(result);
+            }
           }
-        }
+        });
       });
     });
   }

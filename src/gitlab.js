@@ -29,6 +29,20 @@ class GitLab {
   }
 
   /**
+   * Get a project
+   * @param Project project
+   * @return Promise
+   */
+  getProject(project) {
+    return new Promise((resolve) => {
+      this.query(`projects/${project.getID()}`).then((projectData) => {
+        project.setTags(projectData.tag_list);
+        resolve(project);
+      });
+    });
+  }
+
+  /**
    * Diff a file
    * @param Commit commit
    * @param string filename

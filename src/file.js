@@ -14,7 +14,9 @@ class File {
     skills.forEach((skill) => {
       skill.includes.forEach((include) => {
         if (!this.skill && this.name.match(include) !== null) {
-          this.skill = skill;
+          if (!skill.tag || (skill.tag && this.project.hasTag(skill.tag))) {
+            this.skill = skill;
+          }
         }
       });
     });

@@ -6,6 +6,7 @@ class Project {
     this.namespace = config.namespace;
     this.url = config.url;
     this.path = config.path;
+    this.tags = config.tags === undefined ? [] : config.tags;
   }
 
   /**
@@ -48,6 +49,28 @@ class Project {
    */
   getPath() {
     return this.path;
+  }
+
+  /**
+   * @return array
+   */
+  getTags() {
+    return this.tags;
+  }
+
+  /**
+   * @param array tags
+   */
+  setTags(tags) {
+    this.tags = tags;
+  }
+
+  /**
+   * @param string tag
+   * @return boolean
+   */
+  hasTag(tag) {
+    return this.getTags().indexOf(tag) !== -1;
   }
 }
 
