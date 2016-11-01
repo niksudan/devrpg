@@ -113,9 +113,9 @@ class DevRPG {
           }).then((commit) => {
             new Promise((resolve) => {
               let checkedFiles = 0;
-              if (commitData.added.length > 0) {
-                commitData.added.forEach((filename) => {
-                  global.gitlab.diffFile(commit, filename, 'addition').then((file) => {
+              if (commitData.removed.length > 0) {
+                commitData.removed.forEach((filename) => {
+                  global.gitlab.diffFile(commit, filename, 'removed').then((file) => {
                     commit.addFile(file);
                     commit.calculateEXP();
                     checkedFiles += 1;
