@@ -197,7 +197,7 @@ class DevRPG {
         const newUser = data[userKey];
         const newCommits = newUser.getCommits();
         global.firebase.get(`users/${userKey}`).then((userResponse) => {
-          let user = new User({ name: newUser.name, email: newUser.email, skills: newUser.skills });
+          let user = new User({ name: newUser.name, email: newUser.email, skills: newUser.skills, stats: newUser.stats });
           if (userResponse !== null) {
             user = new User(userResponse);
           }
