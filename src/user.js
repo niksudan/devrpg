@@ -73,14 +73,16 @@ class User {
     let exp = this.getSkills()[skillName].totalExp;
     let amount = expBase;
     let level = 1;
+    this.getSkills()[skillName].currentExp = exp;
+    this.getSkills()[skillName].neededExp = amount;
     while (exp > 0) {
-      this.getSkills()[skillName].currentExp = exp;
-      this.getSkills()[skillName].neededExp = amount;
       exp -= amount;
       if (exp >= 0) {
         level += 1;
         amount *= expModifier;
         amount = Math.ceil(amount);
+        this.getSkills()[skillName].currentExp = exp;
+        this.getSkills()[skillName].neededExp = amount;
       }
     }
     this.getSkills()[skillName].level = level;
