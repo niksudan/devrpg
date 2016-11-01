@@ -132,7 +132,7 @@ class GitLab {
    */
   fetchFileContent(commit, file) {
     return new Promise((resolve) => {
-      this.query(`projects/${commit.getProject().getID()}/repository/files?file_path=${file.getName()}&ref=${commit.getID()}`)
+      this.query(`projects/${commit.getProject().getID()}/repository/files?file_path=${encodeURI(file.getName())}&ref=${commit.getID()}`)
         .then((response) => {
           if (response) {
             file.setContent(response.content);
