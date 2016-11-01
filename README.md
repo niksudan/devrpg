@@ -1,17 +1,16 @@
-# DevRPG
-
-**Gamifying Git**
+# DevRPG - Gamifying Git
 
 Earn experience points in various programming skills by committing to a repository. Level up when you get enough EXP, and beat other contributors at their own game.
 
 ## Requirements
+
 - **Node.js** for application running
 - **Firebase** for data storage
 - **GitLab** for source control
 
 ## Usage
 
-- Specify Firebase and GitLab connection information in `config.json`
+- Specify Firebase and GitLab connection information in a `config.json` using the template provided
 - Pass these parameters into a new `DevRPG` instance and run the server using the `run(path, port, callback)` method
 - The callback returns the new commits stored into the database
 
@@ -41,6 +40,15 @@ Various skills are parsed automatically via `data/skills.json`, but some skills 
 - `codeigniter`
 - `wordpress`
 
+## EXP Calculation
+
+EXP for each commit is calculated in the following way:
+
+- Determine if a file has a trackable skill (via `data/skills.json`) and is not ignored (via `data/ignores.json`)
+- Award from 10 - 50 EXP per skill depending on the total number of additions
+- Apply up to 20 EXP per skill if a big number of files have been modified globally
+
 ## Future Features
+
 - GitHub integration
 - Bitbucket integration
