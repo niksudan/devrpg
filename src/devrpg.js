@@ -20,7 +20,7 @@ class DevRPG {
    */
   run(path, port, callback) {
     this.app = express();
-    this.app.post(path, bodyParser.json(), (req, res) => {
+    this.app.post(path, bodyParser.json({ limit: '2mb' }), (req, res) => {
       if (req.headers['x-gitlab-event']) {
         const data = req.body;
         this.process(data).then((processedData) => {
