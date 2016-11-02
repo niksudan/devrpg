@@ -98,13 +98,20 @@ class GitLab {
                 })).then((oldFile) => {
 
                   // Remove all lines if removal
-                  if (status === 'removal') {
+                  if (status === 'removal' || newFile.getContent() === false) {
                     console.log(`${filename} @ #${commit.getID()}: detected removal`);
                     oldFile.setAdditions(-oldFile.getLines());
                     resolve(oldFile);
 
+                  // Check if it's an addition instead of a modification
+                  } else if (oldFile.getContent() === false) {
+                    console.log(`${filename} @ #${commit.getID()}: detected addition`);
+                    newFile.setAdditions(newFile.getLines());
+                    resolve(newFile);
+
                   // Calculate diff if modified
                   } else {
+
                     const diff = jsdiff.structuredPatch(
                       oldFile.getName(),
                       newFile.getName(),
@@ -112,6 +119,7 @@ class GitLab {
                       atob(newFile.getContent()),
                       '', ''
                     );
+
                     if (diff.hunks.length > 0) {
                       diff.hunks.forEach((hunk) => {
                         newFile.addAdditions(hunk.newLines - hunk.oldLines);
