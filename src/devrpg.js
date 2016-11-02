@@ -1,7 +1,6 @@
 const Firebase = require('./firebase');
 const GitLab = require('./gitlab');
 const User = require('./user');
-const Project = require('./project');
 const Commit = require('./commit');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -53,15 +52,7 @@ class DevRPG {
       }
 
       // Generate project
-      global.gitlab.getProject(new Project({
-        id: data.project_id,
-        name: data.project.name,
-        description: data.project.name,
-        namespace: data.project.namespace,
-        url: data.project.web_url,
-        path: data.project.path_with_namespace,
-      })).then((project) => {
-
+      global.gitlab.getProject(data.project_id).then((project) => {
         data.commits.forEach((commitData) => {
 
           // Generate commit

@@ -1,6 +1,7 @@
 const got = require('got');
 const atob = require('atob');
 const jsdiff = require('diff');
+const Project = require('./project');
 const Commit = require('./commit');
 const File = require('./file');
 
@@ -30,14 +31,21 @@ class GitLab {
 
   /**
    * Get a project
-   * @param Project project
+   * @param integer/string projectName
    * @return Promise
    */
-  getProject(project) {
+  getProject(projectName) {
     return new Promise((resolve) => {
-      this.query(`projects/${project.getID()}`).then((projectData) => {
-        project.setTags(projectData.tag_list);
-        resolve(project);
+      this.query(`projects/${encodeURIComponent(projectName)}`).then((projectData) => {
+        resolve(new Project({
+          id: projectData.id,
+          name: projectData.name,
+          description: projectData.description,
+          namespace: projectData.namespace.name,
+          url: projectData.web_url,
+          path: projectData.path_with_namespace,
+          tags: projectData.tag_list,
+        }));
       });
     });
   }
