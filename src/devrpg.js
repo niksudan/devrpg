@@ -213,12 +213,16 @@ class DevRPG {
           }
 
           // Store finalised data for user
-          global.firebase.set(`users/${userKey}`, user).then(() => {
-            progress += 1;
-            if (progress === Object.keys(data).length) {
-              resolve(result);
-            }
-          });
+          try {
+            global.firebase.set(`users/${userKey}`, user).then(() => {
+              progress += 1;
+              if (progress === Object.keys(data).length) {
+                resolve(result);
+              }
+            });
+          } catch (e) {
+            console.log(e.message);
+          }
 
         });
       }
