@@ -70,8 +70,8 @@ class GitLab {
         reject(`${filename} @ #${commit.getID()}: ignored or unskilled file`);
       } else {
         this.query(`projects/${commit.getProject().getID()}/repository/commits/${commit.getID()}`).then((commitData) => {
-          if (!commitData || !commitData.parent_ids.length) {
-            reject(`${filename} @ #${commit.getID()}: error loading parent commit`);
+          if (!commitData) {
+            reject(`${filename} @ #${commit.getID()}: error loading commit data`);
           } else if (commitData.parent_ids.length > 1) {
             reject(`${filename} @ #${commit.getID()}: commit was a merge`);
           } else if (new Date().getMonth() !== new Date(commitData.created_at).getMonth()) {
@@ -81,8 +81,8 @@ class GitLab {
             // Fetch file content
             this.fetchFileContent(commit, file).then((newFile) => {
 
-              // Add all lines if addition
-              if (status === 'addition') {
+              // Add all lines if addition or initial commit
+              if (status === 'addition' || commitData.parent_ids.length === 0) {
                 console.log(`${filename} @ #${commit.getID()}: detected addition`);
                 newFile.setAdditions(newFile.getLines());
                 resolve(newFile);
