@@ -65,6 +65,11 @@
     "handicap": 2
   },
   {
+    "name": "Ansible",
+    "tag": "ansible",
+    "handicap": 1
+  },
+  {
     "name": "Configuration",
     "includes": ["\\.yml$", "\\.json$", "\\.toml"],
     "handicap": 2
