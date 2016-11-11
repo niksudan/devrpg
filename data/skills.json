@@ -1,7 +1,7 @@
 [
   {
     "name": "Templating",
-    "includes": ["\\.html$", "\\.blade.php$", "\\.twig$", "\\.phtml$"],
+    "includes": ["\\.html$", "\\.blade.php$", "\\.twig$", "\\.phtml$", "\\.j2$"],
     "handicap": 1
   },
   {
@@ -66,6 +66,7 @@
   },
   {
     "name": "Ansible",
+    "includes": ["\\.yml$"],
     "tag": "ansible",
     "handicap": 1
   },
