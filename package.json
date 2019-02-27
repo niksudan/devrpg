@@ -1,0 +1,22 @@
+{
+  "name": "devrpg",
+  "version": "0.1.0",
+  "dependencies": {
+    "execa": "^1.0.0",
+    "husky": "^1.3.1",
+    "parse-diff": "^0.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^11.9.5",
+    "ts-node": "^8.0.2",
+    "typescript": "^3.3.3333"
+  },
+  "scripts": {
+    "start": "ts-node ./src/index.ts"
+  },
+  "husky": {
+    "hooks": {
+      "post-commit": "ts-node ./src/index.ts"
+    }
+  }
+}
