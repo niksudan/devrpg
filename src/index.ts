@@ -1,3 +1,8 @@
+declare var console: any;
+
+import chalk from 'chalk';
+import 'core-js';
+
 import { getCommit, getDiffs } from './lib/git';
 import { getLanguage } from './lib/linguist';
 
@@ -5,17 +10,17 @@ import { getLanguage } from './lib/linguist';
   const commit = await getCommit();
   const diffs = await getDiffs();
 
-  console.log(`${commit.author.name} just committed the following files:`);
+  console.log(`${chalk.bold(commit.author.name)} committed the following:`);
 
   diffs.forEach(async (diff) => {
-    if (!diff.deleted) {
+    if (!diff.deleted && diff.to) {
       const language = await getLanguage(diff.to);
-      if (language !== null) {
-        console.log(`  ${diff.to}`);
-        console.log(`    Language: ${language.name}`);
-        console.log(`    Category: ${language.type}`);
-        console.log(`    Additions: ${diff.additions}`);
-        console.log(`    Deletions: ${diff.deletions}`);
+      if (language) {
+        console.log(`  ${chalk.green(diff.to)}`);
+        console.log(`    Language:\t${chalk.yellow(language.name)}`);
+        console.log(`    Category:\t${chalk.yellow(language.type)}`);
+        console.log(`    Additions:\t${chalk.green(String(diff.additions))}`);
+        console.log(`    Deletions:\t${chalk.red(String(diff.deletions))}`);
       }
     }
   });

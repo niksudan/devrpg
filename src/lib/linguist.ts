@@ -1,6 +1,9 @@
+declare var require: any;
+declare var Promise: any;
+
 import { findIndex, values } from 'lodash';
 
-const languages = require('../data/languages.json');
+const languages = require('../../data/languages.json');
 
 interface Language {
   name: string;
@@ -13,12 +16,15 @@ interface Language {
 
 const ignoredLanguages = [
   121, // GCC Machine Description
+  153, // Hack
 ];
 
 /**
  * Get the language of a file based on it's filename
  */
-export const getLanguage = async (filename: string): Promise<Language> => {
+export const getLanguage = async (
+  filename: string,
+): Promise<Language | undefined> => {
   const extension = filename.slice(((filename.lastIndexOf('.') - 1) >>> 0) + 1);
   const index = findIndex(values(languages), (lang) => {
     if (ignoredLanguages.indexOf(lang.language_id) !== -1) {
@@ -30,7 +36,7 @@ export const getLanguage = async (filename: string): Promise<Language> => {
     return false;
   });
   if (index === -1) {
-    return null;
+    return undefined;
   }
   const data = values(languages)[index];
   return {

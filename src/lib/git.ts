@@ -1,3 +1,5 @@
+declare var Promise: any;
+
 import * as execa from 'execa';
 import * as parseDiff from 'parse-diff';
 
