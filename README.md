@@ -1,5 +1,11 @@
 # DevRPG - Gamifying Git
 
+⚠️ **Redevelopment Ongoing!**
+
+I'm currently in the process of redeveloping this into a more efficient git hook service. Check out my progress over on the [v2 branch](https://github.com/niksudan/devrpg/tree/v2).
+
+---
+
 Earn experience points in various programming skills by committing to a repository. Level up when you get enough EXP, and beat other contributors at their own game.
 
 ## Requirements
