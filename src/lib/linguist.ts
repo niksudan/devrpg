@@ -11,9 +11,19 @@ interface Language {
   extensions: string[];
 }
 
+const ignoredLanguages = [
+  121, // GCC Machine Description
+];
+
+/**
+ * Get the language of a file based on it's filename
+ */
 export const getLanguage = async (filename: string): Promise<Language> => {
   const extension = filename.slice(((filename.lastIndexOf('.') - 1) >>> 0) + 1);
   const index = findIndex(values(languages), (lang) => {
+    if (ignoredLanguages.indexOf(lang.language_id) !== -1) {
+      return false;
+    }
     if (lang.extensions && lang.extensions.length) {
       return lang.extensions.indexOf(extension) !== -1;
     }

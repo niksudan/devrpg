@@ -10,11 +10,13 @@ import { getLanguage } from './lib/linguist';
   diffs.forEach(async (diff) => {
     if (!diff.deleted) {
       const language = await getLanguage(diff.to);
-      console.log(`  ${diff.to}`);
-      console.log(`    Language: ${language.name}`);
-      console.log(`    Category: ${language.type}`);
-      console.log(`    Additions: ${diff.additions}`);
-      console.log(`    Deletions: ${diff.deletions}`);
+      if (language !== null) {
+        console.log(`  ${diff.to}`);
+        console.log(`    Language: ${language.name}`);
+        console.log(`    Category: ${language.type}`);
+        console.log(`    Additions: ${diff.additions}`);
+        console.log(`    Deletions: ${diff.deletions}`);
+      }
     }
   });
 })();
