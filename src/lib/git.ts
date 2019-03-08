@@ -1,10 +1,16 @@
 import * as execa from 'execa';
-import * as parse from 'parse-diff';
+import * as parseDiff from 'parse-diff';
+
+interface Commit {
+  author: { name: string; email: string };
+  date: string;
+  message: string;
+}
 
 /**
  * Get details of the last git commit
  */
-export const getCommit = async () => {
+export const getCommit = async (): Promise<Commit> => {
   const { stdout } = await execa('git', [
     'log',
     '-1',
@@ -15,9 +21,9 @@ export const getCommit = async () => {
 };
 
 /**
- * Get details of the last git diff
+ * Get file diffs from the last git commit
  */
-export const getDiff = async () => {
+export const getDiffs = async (): Promise<parseDiff.File[]> => {
   const { stdout } = await execa('git', ['show']);
-  return parse(stdout);
+  return parseDiff(stdout);
 };
