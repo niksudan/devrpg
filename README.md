@@ -6,7 +6,7 @@ Language data via [GitHub Linguist](https://github.com/github/linguist).
 
 ## CLI
 
-* `npm i`
-* `npm run build`
-* `npm link`
+* `yarn`
+* `yarn build`
+* `yarn link`
 * Run `devrpg` in any git repository
