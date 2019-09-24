@@ -4,7 +4,7 @@
   "dependencies": {
     "chalk": "^2.4.2",
     "execa": "^1.0.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "parse-diff": "^0.5.1"
   },
   "devDependencies": {
