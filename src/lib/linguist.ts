@@ -26,7 +26,7 @@ export const getLanguage = async (
   filename: string,
 ): Promise<Language | undefined> => {
   const extension = filename.slice(((filename.lastIndexOf('.') - 1) >>> 0) + 1);
-  const index = findIndex(values(languages), (lang) => {
+  const index = findIndex(values(languages), (lang: any) => {
     if (ignoredLanguages.indexOf(lang.language_id) !== -1) {
       return false;
     }

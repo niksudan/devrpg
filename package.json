@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "dependencies": {
     "chalk": "^2.4.2",
+    "core-js": "^3.2.1",
     "execa": "^1.0.0",
     "lodash": "^4.17.15",
     "parse-diff": "^0.5.1"
   },
   "devDependencies": {
     "@types/execa": "^0.9.0",
+    "@types/lodash": "^4.14.139",
     "@types/node": "^11.9.5",
     "ts-node": "^8.0.2",
     "typescript": "^3.3.3333"
